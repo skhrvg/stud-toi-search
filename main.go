@@ -47,12 +47,10 @@ func main() {
 		})
 	}
 
-	// booksJSON, _ := json.Marshal(books)
-	// fmt.Println(string(booksJSON))
-
 	router := mux.NewRouter()
 	router.HandleFunc("/api/everything", getBooks).Methods("GET")
 	router.HandleFunc("/api/search", searchBooks).Methods("GET")
+	router.HandleFunc("/api/search/advanced", searchBooksAdvanced).Methods("GET")
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 	http.ListenAndServe(":80", router)
 }
@@ -62,7 +60,7 @@ func getBooks(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(books)
 }
 
-func searchBooks(w http.ResponseWriter, r *http.Request) {
+func searchBooksAdvanced(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var foundBooks []Book
 	keys, ok := r.URL.Query()["q"]
@@ -78,7 +76,6 @@ func searchBooks(w http.ResponseWriter, r *http.Request) {
 	words := strings.Split(q, " ")
 	for _, word := range words {
 		subwords := strings.Split(word, "&&")
-		fmt.Println(len(subwords))
 		if len(subwords) == 0 {
 			pattern := `(?i)(^|\s)\Q` + word + `\E[а-яёa-z0-9!?.,-]{0,3}?`
 			for _, book := range books {
@@ -91,7 +88,6 @@ func searchBooks(w http.ResponseWriter, r *http.Request) {
 			foundBooks1 := books
 			var foundBooks2 []Book
 			for _, subword := range subwords {
-				fmt.Println(subword)
 				pattern := `(?i)(^|\s)\Q` + subword + `\E[а-яёa-z0-9!?.,-]{0,3}?`
 				for _, book := range foundBooks1 {
 					bookString := fmt.Sprintf("%s %s %s", book.Author, book.Name, book.Publisher)
@@ -101,7 +97,6 @@ func searchBooks(w http.ResponseWriter, r *http.Request) {
 				}
 				foundBooks1 = foundBooks2
 				foundBooks2 = []Book{}
-				fmt.Println(foundBooks1)
 			}
 			for _, book := range foundBooks1 {
 				foundBooks = append(foundBooks, book)
@@ -121,4 +116,28 @@ func unique(books []Book) []Book {
 		}
 	}
 	return list
+}
+
+func searchBooks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var foundBooks []Book
+	keys, ok := r.URL.Query()["q"]
+	if !ok || len(keys[0]) < 1 {
+		json.NewEncoder(w).Encode(unique(foundBooks))
+		return
+	}
+	q := strings.TrimSpace(keys[0])
+	q = strings.ReplaceAll(q, "\\Q", "")
+	q = strings.ReplaceAll(q, "\\E", "")
+	words := strings.Split(q, " ")
+	for _, word := range words {
+		pattern := `(?i)(^|\s)\Q` + word + `\E[а-яёa-z0-9!?.,-]{0,3}?`
+		for _, book := range books {
+			bookString := fmt.Sprintf("%s %s %s", book.Author, book.Name, book.Publisher)
+			if matched, _ := regexp.Match(pattern, []byte(bookString)); matched || word == book.Year {
+				foundBooks = append(foundBooks, book)
+			}
+		}
+	}
+	json.NewEncoder(w).Encode(unique(foundBooks))
 }
