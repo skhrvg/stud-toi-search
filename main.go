@@ -26,6 +26,7 @@ type Book struct {
 var books []Book
 
 func main() {
+	fmt.Println("Загрузка библиотеки...")
 	file, err := excelize.OpenFile("./books.xlsx")
 	if err != nil {
 		fmt.Printf("Не удалось открыть Excel файл: %s", err)
@@ -46,7 +47,9 @@ func main() {
 			Image:     rows[rowIndex][5],
 		})
 	}
+	fmt.Println("Библиотека загружена.")
 
+	fmt.Println("Запуск вебсервера...")
 	router := mux.NewRouter()
 	router.HandleFunc("/api/everything", getBooks).Methods("GET")
 	router.HandleFunc("/api/search", searchBooks).Methods("GET")
@@ -56,11 +59,13 @@ func main() {
 }
 
 func getBooks(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s %s\n", r.Method, r.RequestURI, r.RemoteAddr)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(books)
 }
 
 func searchBooksAdvanced(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s %s\n", r.Method, r.RequestURI, r.RemoteAddr)
 	w.Header().Set("Content-Type", "application/json")
 	var foundBooks []Book
 	keys, ok := r.URL.Query()["q"]
@@ -119,6 +124,7 @@ func unique(books []Book) []Book {
 }
 
 func searchBooks(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("%s %s %s\n", r.Method, r.RequestURI, r.RemoteAddr)
 	w.Header().Set("Content-Type", "application/json")
 	var foundBooks []Book
 	keys, ok := r.URL.Query()["q"]
