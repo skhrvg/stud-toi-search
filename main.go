@@ -70,13 +70,40 @@ func searchBooks(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(unique(foundBooks))
 		return
 	}
-	q := strings.ReplaceAll(strings.TrimSpace(keys[0]), "\\", "")
+	q := strings.TrimSpace(keys[0])
+	q = strings.ReplaceAll(q, "\\Q", "")
+	q = strings.ReplaceAll(q, "\\E", "")
+	q = strings.ReplaceAll(q, "?", "\\E.\\Q")
+	q = strings.ReplaceAll(q, "*", "\\E.*\\Q")
 	words := strings.Split(q, " ")
 	for _, word := range words {
-		pattern := `(?i)(^|\s)\Q` + word + `\E[а-яёa-z0-9!?.,-]{0,3}?`
-		for _, book := range books {
-			bookString := fmt.Sprintf("%s %s %s", book.Author, book.Name, book.Publisher)
-			if matched, _ := regexp.Match(pattern, []byte(bookString)); matched || word == book.Year {
+		subwords := strings.Split(word, "&&")
+		fmt.Println(len(subwords))
+		if len(subwords) == 0 {
+			pattern := `(?i)(^|\s)\Q` + word + `\E[а-яёa-z0-9!?.,-]{0,3}?`
+			for _, book := range books {
+				bookString := fmt.Sprintf("%s %s %s", book.Author, book.Name, book.Publisher)
+				if matched, _ := regexp.Match(pattern, []byte(bookString)); matched || word == book.Year {
+					foundBooks = append(foundBooks, book)
+				}
+			}
+		} else {
+			foundBooks1 := books
+			var foundBooks2 []Book
+			for _, subword := range subwords {
+				fmt.Println(subword)
+				pattern := `(?i)(^|\s)\Q` + subword + `\E[а-яёa-z0-9!?.,-]{0,3}?`
+				for _, book := range foundBooks1 {
+					bookString := fmt.Sprintf("%s %s %s", book.Author, book.Name, book.Publisher)
+					if matched, _ := regexp.Match(pattern, []byte(bookString)); matched || subword == book.Year {
+						foundBooks2 = append(foundBooks2, book)
+					}
+				}
+				foundBooks1 = foundBooks2
+				foundBooks2 = []Book{}
+				fmt.Println(foundBooks1)
+			}
+			for _, book := range foundBooks1 {
 				foundBooks = append(foundBooks, book)
 			}
 		}
