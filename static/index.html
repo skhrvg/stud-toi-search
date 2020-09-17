@@ -1,107 +1,139 @@
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Поисковая система - ТОИ</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="semantic/dist/semantic.min.css"
+    />
+    <script src="semantic/dist/semantic.min.js"></script>
+    <style>
+      .content {
+        padding-top: 5px !important;
+      }
+      .buybutton {
+        position: absolute;
+        bottom: 1rem;
+        right: 0;
+      }
+      .item {
+        position: relative;
+      }
+    </style>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <title>Поисковая система - ТОИ</title>
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="semantic/dist/semantic.min.css" />
-  <script src="semantic/dist/semantic.min.js"></script>
-  <style>
-
-  </style>
-</head>
-
-<body>
-  <div class="ui container" style="padding: 3rem 0;">
-    <div class="ui very padded segment">
+  <body>
+    <div
+      class="ui container"
+      style="padding: 3rem 0; width: 1127px; min-width: 1127px"
+    >
       <h2 class="ui header">
         Поисковая система
         <div class="sub header">
-          ТЕХНОЛОГИИ ОБРАБОТКИ ИНФОРМАЦИИ / Сахаров Г.И.
+          <div style="display: inline-block; width: 49%">
+            ТЕХНОЛОГИИ ОБРАБОТКИ ИНФОРМАЦИИ / Сахаров Г.И.
+          </div>
+          <div style="text-align: right; display: inline-block; width: 50%">
+            <div class="ui toggle right floated checkbox">
+              <input type="checkbox" name="public" />
+              <label>Расширенный поиск</label>
+            </div>
+          </div>
         </div>
       </h2>
       <div class="ui section divider"></div>
-      <div class="ui segment">
-        <div class="ui grid">
-          <div class="ten wide column">
-            <div class="ui icon fluid input" style="margin-bottom: 0.5rem;">
-              <input type="text" placeholder="Введите запрос...">
-              <i class="search icon"></i>
-            </div>
-          </div>
-          <div class="six wide column">
-            <button class="ui fluid button">
-              Найти
-            </button>
+      <div class="ui grid">
+        <div class="thirteen wide column">
+          <div class="ui icon fluid input" style="margin-bottom: 0.5rem">
+            <input
+              type="text"
+              id="searchbox"
+              placeholder="Введите запрос..."
+              onsubmit="search()"
+            />
+            <i class="search icon"></i>
           </div>
         </div>
-        <div class="ui toggle checkbox">
-          <input type="checkbox" name="public">
-          <label>Расширенный поиск</label>
+        <div class="three wide column" onclick="search()">
+          <button class="ui fluid button">Найти</button>
         </div>
       </div>
       <div class="ui section divider"></div>
-      <div class="ui link cards">
-        <div class="card">
-          <div class="image">
-            <img src="https://cdn1.ozone.ru/s3/multimedia-g/wc1200/6010473280.jpg">
-          </div>
-          <div class="content">
-            <div class="header">Компьютерные сети. Принципы, технологии, протоколы</div>
-            <div class="meta">
-              <p>Олифер Виктор Григорьевич, Олифер Наталия Алексеевна</p>
-              <div class="ui label">2020</div>
-              <div class="ui label"><i class="book icon"></i> Питер</div>
-            </div>
-          </div>
-          <div class="extra content">
-            <a class="ui right floated primary button" href="https://www.ozon.ru/context/detail/id/168455117/">
-              Купить
-              <i class="right chevron icon"></i>
-            </a>
-          </div>
-        </div>
-        <div class="card">
-          <div class="image">
-            <img src="https://cdn1.ozone.ru/multimedia/wc1200/1027298134.jpg">
-          </div>
-          <div class="content">
-            <div class="header">Компьютерные сети</div>
-            <div class="meta">
-              <p>Таненбаум Эндрю, Уэзеролл Дэвид</p>
-              <div class="ui label">2029</div>
-              <div class="ui label"><i class="book icon"></i> Питер</div>
-            </div>
-          </div>
-          <div class="extra content">
-            <a class="ui right floated primary button" href="https://www.ozon.ru/context/detail/id/149235187/">
-              Купить
-              <i class="right chevron icon"></i>
-            </a>
-          </div>
-        </div>
-        <div class="card">
-          <div class="image">
-            <img src="https://cdn1.ozone.ru/s3/multimedia-g/wc1200/6010473280.jpg">
-          </div>
-          <div class="content">
-            <div class="header">Компьютерные сети. Принципы, технологии, протоколы</div>
-            <div class="meta">
-              <p>Олифер Виктор Григорьевич, Олифер Наталия Алексеевна</p>
-              <div class="ui label">2020</div>
-              <div class="ui label"><i class="book icon"></i> Питер</div>
-            </div>
-          </div>
-          <div class="extra content">
-            <a class="ui right floated primary button" href="https://www.ozon.ru/context/detail/id/168455117/">
-              Купить
-              <i class="right chevron icon"></i>
-            </a>
-          </div>
-        </div>
-      </div>
+      <div class="ui divided items"></div>
     </div>
-  </div>
-</body>
+    <script>
+      $.ajax({
+        type: "GET",
+        url: "api/everything",
+        async: false,
+        success: function (data) {
+          books = data;
+        },
+      });
 
+      update();
+
+      $("#searchbox").keyup(function (event) {
+        if (event.keyCode == 13) {
+          event.preventDefault();
+          search();
+        }
+      });
+
+      function search() {
+        if (!$(".ui.checkbox").checkbox("is checked"))
+          searchapi = "api/search?q=";
+        else searchapi = "api/search/advanced?q=";
+        $.ajax({
+          type: "GET",
+          url: searchapi + encodeURIComponent($("#searchbox").val()),
+          async: false,
+          success: function (data) {
+            books = data;
+          },
+        });
+        update();
+      }
+
+      function update() {
+        console.log(books);
+        if (books.length == 0) {
+          $(".ui.divided.items").html("Ничего не найдено.");
+        } else {
+          $(".ui.divided.items").html("");
+          for (i = 0; i < books.length; i++) {
+            if (books[i].image == "") books[i].image = "noimage.png";
+            if (books[i].store == "")
+              button = `<a class="ui right floated disabled button buybutton">Нет в наличии</a>`;
+            else
+              button = `<a class="ui right floated primary button buybutton" href="${books[i].store}">Купить<i class="right chevron icon"></i></a>`;
+            $(".ui.divided.items").append(`
+              <div class="item">
+                <div class="ui tiny image">
+                  <img
+                    src="${books[i].image}"
+                  />
+                </div>
+                <div class="content">
+                  <div class="header">
+                    ${books[i].name}
+                  </div>
+                  <div class="meta">
+                    <p>${books[i].author}</p>
+                  </div>
+                  <div class="extra">
+                    <div class="ui label">${books[i].year}</div>
+                    <div class="ui label"><i class="book icon"></i> ${books[i].publisher}</div>
+                  </div>
+                </div>
+                ${button}
+              </div>
+            `);
+          }
+        }
+      }
+    </script>
+  </body>
 </html>
