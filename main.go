@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -49,13 +51,24 @@ func main() {
 	}
 	fmt.Println("Библиотека загружена.")
 
+	go chrome()
+
 	fmt.Println("Запуск вебсервера...")
 	router := mux.NewRouter()
 	router.HandleFunc("/api/everything", getBooks).Methods("GET")
 	router.HandleFunc("/api/search", searchBooks).Methods("GET")
 	router.HandleFunc("/api/search/advanced", searchBooksAdvanced).Methods("GET")
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
-	http.ListenAndServe(":80", router)
+	http.ListenAndServe(":8081", router)
+}
+
+func chrome() {
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	cmd := exec.Command(dir + "/chrome.bat")
+	if err := cmd.Run(); nil != err {
+		fmt.Println(err)
+	}
+	defer os.Exit(0)
 }
 
 func getBooks(w http.ResponseWriter, r *http.Request) {
